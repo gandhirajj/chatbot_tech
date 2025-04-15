@@ -15,10 +15,8 @@ const Chatbot = () => {
     lastProjectType: ''
   });
 
-  // Initialize speech recognition
   const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
 
-  // Load user preferences from localStorage on component mount
   useEffect(() => {
     const savedPreferences = localStorage.getItem('techStackPreferences');
     if (savedPreferences) {
@@ -26,12 +24,10 @@ const Chatbot = () => {
     }
   }, []);
 
-  // Save user preferences to localStorage when they change
   useEffect(() => {
     localStorage.setItem('techStackPreferences', JSON.stringify(userPreferences));
   }, [userPreferences]);
 
-  // Voice recognition setup
   useEffect(() => {
     recognition.continuous = false;
     recognition.interimResults = false;
@@ -64,38 +60,34 @@ const Chatbot = () => {
     setChatHistory(prev => [...prev, { sender, message }]);
   };
 
-  // Extract and store user preferences from messages
   const extractPreferences = (message) => {
-    const newPreferences = {...userPreferences};
-    
-    // Detect programming languages mentioned
+    const newPreferences = { ...userPreferences };
+
     const languageKeywords = ['JavaScript', 'Python', 'Java', 'C#', 'PHP', 'Ruby', 'Go', 'TypeScript'];
-    const mentionedLanguages = languageKeywords.filter(lang => 
+    const mentionedLanguages = languageKeywords.filter(lang =>
       message.toLowerCase().includes(lang.toLowerCase())
     );
-    
+
     if (mentionedLanguages.length > 0) {
       newPreferences.preferredLanguages = [
         ...new Set([...newPreferences.preferredLanguages, ...mentionedLanguages])
       ];
     }
 
-    // Detect project types
     const projectTypes = ['social media', 'e-commerce', 'blog', 'dashboard', 'mobile app', 'API'];
-    const mentionedProjectType = projectTypes.find(type => 
+    const mentionedProjectType = projectTypes.find(type =>
       message.toLowerCase().includes(type)
     );
-    
+
     if (mentionedProjectType) {
       newPreferences.lastProjectType = mentionedProjectType;
     }
 
-    // Detect tools/frameworks mentioned
     const techKeywords = ['React', 'Angular', 'Vue', 'Django', 'Flask', 'Laravel', 'Express', 'Spring'];
-    const mentionedTech = techKeywords.filter(tech => 
+    const mentionedTech = techKeywords.filter(tech =>
       message.toLowerCase().includes(tech.toLowerCase())
     );
-    
+
     if (mentionedTech.length > 0) {
       newPreferences.previousTools = [
         ...new Set([...newPreferences.previousTools, ...mentionedTech])
@@ -105,34 +97,32 @@ const Chatbot = () => {
     setUserPreferences(newPreferences);
   };
 
-  // Generate context-aware prompt
   const generatePrompt = (message) => {
     let prompt = `You are a technology stack recommendation assistant. The user is asking: "${message}"\n\n`;
-    
-    // Add context from previous interactions
+
     if (userPreferences.preferredLanguages.length > 0) {
       prompt += `The user has previously worked with these languages: ${userPreferences.preferredLanguages.join(', ')}. `;
     }
-    
+
     if (userPreferences.previousTools.length > 0) {
       prompt += `They have experience with these tools/frameworks: ${userPreferences.previousTools.join(', ')}. `;
     }
-    
+
     if (userPreferences.lastProjectType) {
       prompt += `Their last project was a ${userPreferences.lastProjectType} application. `;
     }
-    
+
     prompt += `Provide detailed, personalized recommendations with explanations. Mention alternatives and trade-offs. `;
-    prompt += `If they're asking about updates or comparisons, check for the latest versions and trends.`;
-    
+    prompt += `If they're asking about updates or comparisons, check for the latest versions and trends. `;
+    prompt += `Keep the response concise, ideally within 6 to 7 lines.`;
+
     return prompt;
   };
 
-  // Gemini API call with enhanced prompt
   const handleSend = async (message) => {
     extractPreferences(message);
     const contextPrompt = generatePrompt(message);
-    
+
     try {
       const response = await axios.post(
         "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyCjgIWmsc59bXWcukmsbainHT0At1EghVE",
@@ -164,7 +154,6 @@ const Chatbot = () => {
     }
   };
 
-  // Text-to-speech
   const speakResponse = (text) => {
     const synth = window.speechSynthesis;
     const utterance = new SpeechSynthesisUtterance(text);
@@ -172,7 +161,6 @@ const Chatbot = () => {
     synth.speak(utterance);
   };
 
-  // Handle text input send
   const handleTextSend = (e) => {
     e.preventDefault();
     if (userInput.trim() !== '') {
@@ -183,7 +171,6 @@ const Chatbot = () => {
     }
   };
 
-  // Clear chat history but keep preferences
   const clearChat = () => {
     setChatHistory([]);
     setResponse('');
@@ -196,12 +183,11 @@ const Chatbot = () => {
       <h1>Personalized Tech Stack Advisor</h1>
       <p className="subtitle">I remember your preferences to provide better recommendations</p>
 
-      {/* Voice and text input */}
       <div className="input-section">
         <button onClick={startListening} disabled={isListening}>
           {isListening ? 'Listening...' : 'Start Speaking 🎙'}
         </button>
-        
+
         <form onSubmit={handleTextSend}>
           <input
             type="text"
@@ -216,7 +202,6 @@ const Chatbot = () => {
         </form>
       </div>
 
-      {/* User preferences summary */}
       <div className="preferences-summary">
         <h3>Your Preferences:</h3>
         {userPreferences.preferredLanguages.length > 0 && (
@@ -228,18 +213,17 @@ const Chatbot = () => {
         {userPreferences.lastProjectType && (
           <p><strong>Last Project:</strong> {userPreferences.lastProjectType}</p>
         )}
-        {userPreferences.preferredLanguages.length === 0 && 
-         userPreferences.previousTools.length === 0 && 
-         !userPreferences.lastProjectType && (
-          <p>No preferences saved yet. Ask me about technologies to get started!</p>
-        )}
+        {userPreferences.preferredLanguages.length === 0 &&
+          userPreferences.previousTools.length === 0 &&
+          !userPreferences.lastProjectType && (
+            <p>No preferences saved yet. Ask me about technologies to get started!</p>
+          )}
       </div>
 
-      {/* Chat history */}
       <div className="chat-history">
         {chatHistory.map((chat, index) => (
           <div key={index} className={`chat-message ${chat.sender}`}>
-            <strong>{chat.sender === 'user' ? 'You' : 'Assistant'}:</strong> 
+            <strong>{chat.sender === 'user' ? 'You' : 'Assistant'}:</strong>
             <div className="message-content">{chat.message}</div>
           </div>
         ))}
