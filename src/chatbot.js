@@ -136,7 +136,7 @@ const Chatbot = () => {
         {
           headers: {
             'Content-Type': 'application/json',
-            'x-goog-api-key': 'AIzaSyCjgIWmsc59bXWcukmsbainHT0At1EghVE',
+            'x-goog-api-key': 'your google api key',
           },
         }
       );
